@@ -596,8 +596,9 @@
   let isFocusActive = false;
 
   // ── Persist & restore state via sessionStorage ──
-  function saveState() {
+  function saveState(mode = 'focus') {
     sessionStorage.setItem('fl_state', JSON.stringify({
+      mode,
       isFocusActive,
       focusSecondsLeft,
       focusTotalSeconds,
@@ -637,24 +638,35 @@
   function checkURLState() {
     const params = new URLSearchParams(window.location.search);
     const isBlocked = params.get('blocked') === '1';
-
-    // Always try to restore saved state first
     const hasState = loadState();
     renderQuotesList();
 
-    if (isBlocked && hasState && isFocusActive) {
-      // Shortcut triggered — resume timer in background and show block screen
-      resumeFocusTimer();
-      showBlockedScreen();
+    if (isBlocked) {
+      // Shortcut fired — check what mode we're in
+      const raw = sessionStorage.getItem('fl_state');
+      const mode = raw ? JSON.parse(raw).mode : 'idle';
+
+      if (mode === 'focus' && hasState && isFocusActive) {
+        // Mid-session: block Instagram, show quote screen
+        resumeFocusTimer();
+        showBlockedScreen();
+      } else if (mode === 'reward') {
+        // Reward time is active: let Instagram open freely
+        // Just close this page immediately so Instagram stays open
+        window.location.replace('https://instagram.com');
+      } else {
+        // No active session — show setup
+        showScreen('setup');
+      }
     } else if (hasState && isFocusActive) {
-      // User came back to app normally during focus
+      // User opened app normally during focus
       resumeFocusTimer();
       renderFocusTasks();
       updateFocusClock();
       updateUnlockBtn();
       showScreen('focus');
     }
-    // else: fresh start, show setup (default)
+    // else: fresh start, show setup
   }
 
   function resumeFocusTimer() {
@@ -754,12 +766,12 @@
     focusSecondsLeft = workMinutes * 60;
     focusTotalSeconds = focusSecondsLeft;
     isFocusActive = true;
-    saveState();
+    saveState('focus');
     showScreen('focus');
     renderFocusTasks(); updateFocusClock(); updateUnlockBtn();
     focusInterval = setInterval(() => {
       focusSecondsLeft--;
-      saveState();
+      saveState('focus');
       updateFocusClock();
       if (focusSecondsLeft <= 0) { clearInterval(focusInterval); focusSecondsLeft = 0; updateFocusClock(); updateUnlockBtn(); }
     }, 1000);
@@ -819,7 +831,7 @@
   function unlockReward() {
     clearInterval(focusInterval);
     isFocusActive = false;
-    clearState();
+    saveState('reward');
     rewardSecondsLeft = rewardMinutes * 60;
     showScreen('reward');
     updateRewardClock();
@@ -842,6 +854,7 @@
     const focusedMins = Math.round((focusTotalSeconds - focusSecondsLeft)/60);
     document.getElementById('statTasks').textContent = doneTasks+'/'+tasks.length;
     document.getElementById('statTime').textContent = focusedMins+'m';
+    clearState();
     showScreen('expired');
   }
 
