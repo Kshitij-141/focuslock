@@ -595,15 +595,82 @@
   let focusSecondsLeft = 0, rewardSecondsLeft = 0, focusTotalSeconds = 0;
   let isFocusActive = false;
 
+  // ── Persist & restore state via sessionStorage ──
+  function saveState() {
+    sessionStorage.setItem('fl_state', JSON.stringify({
+      isFocusActive,
+      focusSecondsLeft,
+      focusTotalSeconds,
+      workMinutes,
+      rewardMinutes,
+      tasks,
+      taskChecked,
+      quotes
+    }));
+  }
+
+  function loadState() {
+    try {
+      const raw = sessionStorage.getItem('fl_state');
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      isFocusActive   = s.isFocusActive;
+      focusSecondsLeft  = s.focusSecondsLeft;
+      focusTotalSeconds = s.focusTotalSeconds;
+      workMinutes     = s.workMinutes;
+      rewardMinutes   = s.rewardMinutes;
+      tasks       = s.tasks;
+      taskChecked     = s.taskChecked;
+      if (s.quotes && s.quotes.length) quotes = s.quotes;
+      return true;
+    } catch(e) { return false; }
+  }
+
+  function clearState() {
+    sessionStorage.removeItem('fl_state');
+  }
+
   // ── Init ──
   renderQuotesList();
   checkURLState();
 
   function checkURLState() {
-    // When Shortcut opens this URL with ?blocked=1, show blocking screen
     const params = new URLSearchParams(window.location.search);
-    if (params.get('blocked') === '1' && isFocusActive) {
+    const isBlocked = params.get('blocked') === '1';
+
+    // Always try to restore saved state first
+    const hasState = loadState();
+    renderQuotesList();
+
+    if (isBlocked && hasState && isFocusActive) {
+      // Shortcut triggered — resume timer in background and show block screen
+      resumeFocusTimer();
       showBlockedScreen();
+    } else if (hasState && isFocusActive) {
+      // User came back to app normally during focus
+      resumeFocusTimer();
+      renderFocusTasks();
+      updateFocusClock();
+      updateUnlockBtn();
+      showScreen('focus');
+    }
+    // else: fresh start, show setup (default)
+  }
+
+  function resumeFocusTimer() {
+    clearInterval(focusInterval);
+    if (focusSecondsLeft > 0) {
+      focusInterval = setInterval(() => {
+        focusSecondsLeft--;
+        saveState();
+        updateFocusClock();
+        if (focusSecondsLeft <= 0) {
+          clearInterval(focusInterval);
+          focusSecondsLeft = 0;
+          updateFocusClock();
+          updateUnlockBtn();
+        }
+      }, 1000);
     }
   }
 
@@ -687,10 +754,12 @@
     focusSecondsLeft = workMinutes * 60;
     focusTotalSeconds = focusSecondsLeft;
     isFocusActive = true;
+    saveState();
     showScreen('focus');
     renderFocusTasks(); updateFocusClock(); updateUnlockBtn();
     focusInterval = setInterval(() => {
       focusSecondsLeft--;
+      saveState();
       updateFocusClock();
       if (focusSecondsLeft <= 0) { clearInterval(focusInterval); focusSecondsLeft = 0; updateFocusClock(); updateUnlockBtn(); }
     }, 1000);
@@ -750,6 +819,7 @@
   function unlockReward() {
     clearInterval(focusInterval);
     isFocusActive = false;
+    clearState();
     rewardSecondsLeft = rewardMinutes * 60;
     showScreen('reward');
     updateRewardClock();
@@ -780,6 +850,7 @@
     clearInterval(focusInterval); clearInterval(rewardInterval); clearInterval(blockCountdownInterval);
     tasks=[]; taskChecked=[]; workMinutes=0; rewardMinutes=0;
     focusSecondsLeft=0; focusTotalSeconds=0; isFocusActive=false;
+    clearState();
     document.querySelectorAll('.timer-option,.reward-option').forEach(e=>e.classList.remove('selected'));
     document.getElementById('taskList').innerHTML='';
     document.getElementById('customMins').value='';
