@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FocusLock</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0a0a;
@@ -15,6 +15,7 @@
     --text: #f0f0f0;
     --muted: #555;
     --reward: #f135a8;
+    --block-bg: #0d0005;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,7 +28,6 @@
     overflow-x: hidden;
   }
 
-  /* Noise texture overlay */
   body::before {
     content: '';
     position: fixed;
@@ -41,868 +41,573 @@
   .screen { display: none; min-height: 100vh; }
   .screen.active { display: flex; flex-direction: column; }
 
-  /* ─── SETUP SCREEN ─── */
-  #setup {
-    padding: 40px 24px;
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-    gap: 32px;
-  }
-
+  /* ── SHARED ── */
   .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    font-family: 'DM Mono', monospace;
-    color: var(--muted);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-family: 'DM Mono', monospace;
+    color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase;
   }
-
   .logo-dot {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
+    width: 8px; height: 8px; background: var(--accent);
+    border-radius: 50%; animation: pulse 2s infinite;
   }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  h1 {
-    font-size: clamp(36px, 9vw, 56px);
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-
-  h1 span { color: var(--accent); }
-
-  .subtitle {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    margin-top: 8px;
-  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
 
   .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--muted); letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 12px;
   }
 
-  /* Timer setup */
-  .timer-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+  /* ── SETUP ── */
+  #setup {
+    padding: 40px 24px; max-width: 480px;
+    margin: 0 auto; width: 100%; gap: 28px;
   }
 
+  h1 { font-size: clamp(36px,9vw,56px); font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+  h1 span { color: var(--accent); }
+  .subtitle { font-family: 'DM Mono',monospace; font-size: 12px; color: var(--muted); letter-spacing: .08em; margin-top: 8px; }
+
+  .timer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .timer-option {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; cursor: pointer; transition: all .2s; text-align: center;
   }
-
   .timer-option:hover { border-color: var(--muted); }
-  .timer-option.selected {
-    border-color: var(--accent);
-    background: rgba(200, 241, 53, 0.06);
-  }
+  .timer-option.selected { border-color: var(--accent); background: rgba(200,241,53,.06); }
+  .timer-option .time-val { font-size: 24px; font-weight: 800; color: var(--accent); }
+  .timer-option .time-label { font-family: 'DM Mono',monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  .timer-option .time-val {
-    font-size: 24px;
-    font-weight: 800;
-    color: var(--accent);
-  }
-
-  .timer-option .time-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  /* Custom timer */
   .custom-timer {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-top: 12px;
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-top: 12px;
   }
-
   .custom-timer input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    font-size: 22px;
-    font-weight: 500;
-    width: 60px;
-    text-align: center;
+    background: none; border: none; outline: none;
+    color: var(--accent); font-family: 'DM Mono',monospace;
+    font-size: 22px; font-weight: 500; width: 60px; text-align: center;
   }
+  .custom-timer span { font-family: 'DM Mono',monospace; font-size: 12px; color: var(--muted); }
 
-  .custom-timer span {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  /* Task input */
-  .task-input-row {
-    display: flex;
-    gap: 10px;
-  }
-
+  .task-input-row { display: flex; gap: 10px; }
   .task-input-row input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; color: var(--text);
+    font-family: 'Syne',sans-serif; font-size: 14px; outline: none; transition: border-color .2s;
   }
-
   .task-input-row input:focus { border-color: var(--accent); }
   .task-input-row input::placeholder { color: var(--muted); }
 
   .btn-add {
-    background: var(--accent);
-    border: none;
-    border-radius: 10px;
-    width: 48px;
-    height: 48px;
-    font-size: 22px;
-    cursor: pointer;
-    color: var(--bg);
-    font-weight: 800;
-    transition: transform 0.15s;
+    background: var(--accent); border: none; border-radius: 10px;
+    width: 48px; height: 48px; font-size: 22px; cursor: pointer;
+    color: var(--bg); font-weight: 800; transition: transform .15s;
     display: flex; align-items: center; justify-content: center;
   }
-
   .btn-add:hover { transform: scale(1.08); }
 
-  .task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
+  .task-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
   .task-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    animation: slideIn 0.2s ease;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    animation: slideIn .2s ease;
   }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .task-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    min-width: 20px;
-  }
-
+  @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  .task-num { font-family: 'DM Mono',monospace; font-size: 11px; color: var(--muted); min-width: 20px; }
   .task-text { flex: 1; font-size: 14px; }
-
   .btn-remove {
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    transition: color 0.2s;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 2px 6px;
+    border-radius: 4px; transition: color .2s;
   }
-
   .btn-remove:hover { color: var(--accent2); }
 
-  /* Reward time */
-  .reward-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-
+  .reward-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
   .reward-option {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 8px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 8px; cursor: pointer; text-align: center; transition: all .2s;
   }
-
   .reward-option:hover { border-color: var(--muted); }
-  .reward-option.selected {
-    border-color: var(--reward);
-    background: rgba(241, 53, 168, 0.06);
-  }
+  .reward-option.selected { border-color: var(--reward); background: rgba(241,53,168,.06); }
+  .reward-option .r-val { font-size: 20px; font-weight: 800; color: var(--reward); }
+  .reward-option .r-label { font-family: 'DM Mono',monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-  .reward-option .r-val {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--reward);
+  /* Quotes manager in setup */
+  .quotes-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
   }
-
-  .reward-option .r-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 2px;
+  .quotes-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
   }
+  .quotes-header span { font-family: 'DM Mono',monospace; font-size: 11px; color: var(--muted); letter-spacing: .1em; }
+  .quotes-count {
+    background: rgba(200,241,53,.1); color: var(--accent);
+    font-family: 'DM Mono',monospace; font-size: 11px;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .quotes-list { padding: 8px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .quote-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 8px; transition: border-color .2s;
+  }
+  .quote-item:hover { border-color: var(--muted); }
+  .quote-item-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.4; font-style: italic; }
+  .quote-item-author { font-family: 'DM Mono',monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-  /* Start button */
+  .quote-input-area { padding: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+  .quote-input-area input, .quote-input-area textarea {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; color: var(--text); font-family: 'Syne',sans-serif;
+    font-size: 13px; outline: none; transition: border-color .2s; resize: none;
+  }
+  .quote-input-area input:focus, .quote-input-area textarea:focus { border-color: var(--accent); }
+  .quote-input-area input::placeholder, .quote-input-area textarea::placeholder { color: var(--muted); }
+  .btn-add-quote {
+    background: rgba(200,241,53,.1); border: 1px solid rgba(200,241,53,.3);
+    color: var(--accent); border-radius: 8px; padding: 10px;
+    font-family: 'Syne',sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-add-quote:hover { background: rgba(200,241,53,.18); }
+
   .btn-start {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 14px;
-    padding: 18px;
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    width: 100%;
-    transition: transform 0.15s, box-shadow 0.15s;
+    background: var(--accent); color: var(--bg); border: none;
+    border-radius: 14px; padding: 18px; font-family: 'Syne',sans-serif;
+    font-size: 16px; font-weight: 800; letter-spacing: .05em;
+    cursor: pointer; width: 100%; transition: transform .15s, box-shadow .15s;
     text-transform: uppercase;
   }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(200,241,53,.25); }
+  .btn-start:disabled { opacity: .3; cursor: not-allowed; transform: none; box-shadow: none; }
 
-  .btn-start:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(200, 241, 53, 0.25);
-  }
-
-  .btn-start:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* ─── FOCUS SCREEN ─── */
+  /* ── FOCUS ── */
   #focus {
-    padding: 40px 24px;
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-    align-items: center;
-    gap: 28px;
+    padding: 40px 24px; max-width: 480px;
+    margin: 0 auto; width: 100%; align-items: center; gap: 28px;
   }
-
-  .focus-header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
+  .focus-header { width: 100%; display: flex; justify-content: space-between; align-items: center; }
   .status-badge {
-    background: rgba(200, 241, 53, 0.1);
-    border: 1px solid rgba(200, 241, 53, 0.3);
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    letter-spacing: 0.1em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    background: rgba(200,241,53,.1); border: 1px solid rgba(200,241,53,.3);
+    color: var(--accent); font-family: 'DM Mono',monospace; font-size: 11px;
+    padding: 6px 12px; border-radius: 20px; letter-spacing: .1em;
+    display: flex; align-items: center; gap: 6px;
   }
+  .status-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 1.5s infinite; }
 
-  .status-dot {
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-  }
-
-  /* Big clock */
-  .clock-wrap {
-    text-align: center;
-    width: 100%;
-  }
-
+  .clock-wrap { text-align: center; width: 100%; }
   .clock {
-    font-size: clamp(64px, 18vw, 100px);
-    font-weight: 800;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: -0.04em;
-    color: var(--text);
-    line-height: 1;
-    position: relative;
-    display: inline-block;
+    font-size: clamp(64px,18vw,100px); font-weight: 800;
+    font-family: 'DM Mono',monospace; letter-spacing: -.04em;
+    color: var(--text); line-height: 1; position: relative; display: inline-block;
   }
-
   .clock::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0; right: 0;
-    height: 3px;
-    background: var(--accent);
-    border-radius: 2px;
-    transform-origin: left;
-    animation: none;
+    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+    height: 3px; background: var(--accent); border-radius: 2px;
   }
+  .clock-label { font-family: 'DM Mono',monospace; font-size: 11px; color: var(--muted); letter-spacing: .15em; text-transform: uppercase; margin-top: 12px; }
 
-  .clock.ticking::after {
-    animation: shrink linear forwards;
+  .ring-wrap { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; }
+  .ring-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .ring-progress { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .ring-text { text-align: center; font-family: 'DM Mono',monospace; }
+  .ring-pct { font-size: 28px; font-weight: 500; color: var(--accent); }
+  .ring-sub { font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+
+  .focus-tasks { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .focus-task {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border: 1px solid var(--border);
+    border-radius: 12px; cursor: pointer; transition: all .25s; user-select: none;
   }
-
-  @keyframes shrink {
-    from { transform: scaleX(1); }
-    to { transform: scaleX(0); }
+  .focus-task:hover { border-color: var(--muted); }
+  .focus-task.done { border-color: rgba(200,241,53,.3); background: rgba(200,241,53,.04); }
+  .check-box {
+    width: 22px; height: 22px; border: 2px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .2s; font-size: 13px;
   }
+  .focus-task.done .check-box { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .focus-task-text { flex: 1; font-size: 14px; transition: all .25s; }
+  .focus-task.done .focus-task-text { text-decoration: line-through; color: var(--muted); }
 
-  .clock-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-top: 12px;
+  .divider { width: 100%; height: 1px; background: var(--border); }
+  .bottom-bar { width: 100%; display: flex; gap: 10px; margin-top: auto; }
+  .btn-secondary {
+    flex: 1; background: none; border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; color: var(--muted);
+    font-family: 'Syne',sans-serif; font-size: 13px; cursor: pointer; transition: all .2s;
   }
+  .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+  .btn-unlock {
+    flex: 2; background: var(--accent); border: none; border-radius: 12px;
+    padding: 14px; color: var(--bg); font-family: 'Syne',sans-serif;
+    font-size: 14px; font-weight: 800; cursor: pointer; transition: all .2s;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .btn-unlock:hover { box-shadow: 0 6px 24px rgba(200,241,53,.3); }
+  .btn-unlock:disabled { opacity: .3; cursor: not-allowed; box-shadow: none; }
 
-  /* Progress ring */
-  .ring-wrap {
-    position: relative;
-    width: 160px;
-    height: 160px;
-    display: flex;
+  /* ── BLOCKED SCREEN ── */
+  #blocked {
+    background: var(--block-bg);
+    padding: 0;
     align-items: center;
     justify-content: center;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
   }
 
-  .ring-wrap svg {
+  /* animated bg */
+  #blocked::before {
+    content: '';
     position: absolute;
-    inset: 0;
-    transform: rotate(-90deg);
+    inset: -50%;
+    background: radial-gradient(ellipse at 30% 40%, rgba(200,0,50,.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 70%, rgba(100,0,200,.12) 0%, transparent 60%);
+    animation: bgPulse 6s ease-in-out infinite alternate;
+  }
+  @keyframes bgPulse {
+    from { transform: scale(1) rotate(0deg); }
+    to { transform: scale(1.1) rotate(3deg); }
   }
 
-  .ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
-  .ring-progress {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 4;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s linear;
-  }
-
-  .ring-text {
-    text-align: center;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .ring-pct {
-    font-size: 28px;
-    font-weight: 500;
-    color: var(--accent);
-  }
-
-  .ring-sub {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  /* Focus task list */
-  .focus-tasks {
-    width: 100%;
+  .blocked-inner {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .focus-task {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.25s;
-    user-select: none;
-  }
-
-  .focus-task:hover { border-color: var(--muted); }
-
-  .focus-task.done {
-    border-color: rgba(200, 241, 53, 0.3);
-    background: rgba(200, 241, 53, 0.04);
-  }
-
-  .check-box {
-    width: 22px; height: 22px;
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.2s;
-    font-size: 13px;
-  }
-
-  .focus-task.done .check-box {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--bg);
-  }
-
-  .focus-task-text {
-    flex: 1;
-    font-size: 14px;
-    transition: all 0.25s;
-  }
-
-  .focus-task.done .focus-task-text {
-    text-decoration: line-through;
-    color: var(--muted);
-  }
-
-  /* Bottom bar */
-  .bottom-bar {
-    width: 100%;
-    display: flex;
-    gap: 10px;
-    margin-top: auto;
-  }
-
-  .btn-secondary {
-    flex: 1;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    color: var(--muted);
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
-
-  .btn-unlock {
-    flex: 2;
-    background: var(--accent);
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    color: var(--bg);
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .btn-unlock:hover { box-shadow: 0 6px 24px rgba(200, 241, 53, 0.3); }
-  .btn-unlock:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
-
-  /* ─── REWARD SCREEN ─── */
-  #reward {
-    padding: 40px 24px;
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
     align-items: center;
     justify-content: center;
     gap: 32px;
+    padding: 48px 32px;
     text-align: center;
+    max-width: 380px;
   }
 
-  .reward-emoji {
-    font-size: 64px;
-    animation: bounce 0.6s ease;
+  .blocked-lock {
+    font-size: 72px;
+    animation: lockBounce .5s cubic-bezier(.36,.07,.19,.97) both;
+  }
+  @keyframes lockBounce {
+    0%{transform:scale(0) rotate(-20deg)}
+    60%{transform:scale(1.2) rotate(5deg)}
+    100%{transform:scale(1) rotate(0)}
   }
 
-  @keyframes bounce {
-    0% { transform: scale(0); }
-    60% { transform: scale(1.15); }
-    100% { transform: scale(1); }
-  }
-
-  .reward-title {
-    font-size: 42px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-  }
-
-  .reward-title span { color: var(--reward); }
-
-  .reward-clock {
-    font-size: clamp(56px, 16vw, 88px);
-    font-weight: 800;
-    font-family: 'DM Mono', monospace;
-    color: var(--reward);
-    letter-spacing: -0.04em;
-  }
-
-  .reward-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .instagram-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-    color: white;
-    border: none;
-    border-radius: 14px;
-    padding: 18px 32px;
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    width: 100%;
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-
-  .instagram-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(220, 39, 67, 0.4);
-  }
-
-  .ig-icon {
-    width: 22px; height: 22px;
-    fill: white;
-  }
-
-  .reward-warning {
-    background: rgba(241, 53, 168, 0.08);
-    border: 1px solid rgba(241, 53, 168, 0.2);
-    border-radius: 10px;
-    padding: 12px 16px;
+  .blocked-tag {
     font-family: 'DM Mono', monospace;
     font-size: 11px;
-    color: var(--reward);
-    letter-spacing: 0.05em;
-    width: 100%;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: rgba(255,100,100,.7);
+    background: rgba(255,50,50,.08);
+    border: 1px solid rgba(255,50,50,.2);
+    padding: 6px 14px;
+    border-radius: 20px;
   }
 
-  .btn-done-early {
-    background: none;
-    border: 1px solid var(--border);
+  .blocked-quote {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(22px, 6vw, 30px);
+    line-height: 1.35;
+    color: #f8f0e8;
+    letter-spacing: -.01em;
+  }
+
+  .blocked-quote-mark {
+    font-size: 64px;
+    line-height: 0.5;
+    color: rgba(255,255,255,.08);
+    font-family: 'Playfair Display', serif;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .blocked-author {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,.35);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-top: -16px;
+  }
+
+  .blocked-countdown {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: rgba(255,100,100,.6);
+    letter-spacing: .1em;
+  }
+
+  .blocked-countdown span {
+    color: rgba(255,100,100,.9);
+    font-weight: 500;
+  }
+
+  .btn-back-to-work {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    color: rgba(255,255,255,.5);
     border-radius: 12px;
-    padding: 14px;
-    color: var(--muted);
+    padding: 14px 28px;
     font-family: 'Syne', sans-serif;
     font-size: 13px;
     cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .05em;
     width: 100%;
-    transition: all 0.2s;
+  }
+  .btn-back-to-work:hover {
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.8);
   }
 
+  /* ── REWARD ── */
+  #reward {
+    padding: 40px 24px; max-width: 480px;
+    margin: 0 auto; width: 100%; align-items: center;
+    justify-content: center; gap: 32px; text-align: center;
+  }
+  .reward-emoji { font-size: 64px; animation: bounce .6s ease; }
+  @keyframes bounce { 0%{transform:scale(0)} 60%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .reward-title { font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+  .reward-title span { color: var(--reward); }
+  .reward-clock { font-size: clamp(56px,16vw,88px); font-weight: 800; font-family: 'DM Mono',monospace; color: var(--reward); letter-spacing: -.04em; }
+  .reward-sub { font-family: 'DM Mono',monospace; font-size: 12px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .instagram-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+    color: white; border: none; border-radius: 14px; padding: 18px 32px;
+    font-family: 'Syne',sans-serif; font-size: 16px; font-weight: 700;
+    cursor: pointer; text-decoration: none; width: 100%;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .instagram-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(220,39,67,.4); }
+  .ig-icon { width: 22px; height: 22px; fill: white; }
+  .reward-warning {
+    background: rgba(241,53,168,.08); border: 1px solid rgba(241,53,168,.2);
+    border-radius: 10px; padding: 12px 16px; font-family: 'DM Mono',monospace;
+    font-size: 11px; color: var(--reward); letter-spacing: .05em; width: 100%;
+  }
+  .btn-done-early {
+    background: none; border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; color: var(--muted); font-family: 'Syne',sans-serif;
+    font-size: 13px; cursor: pointer; width: 100%; transition: all .2s;
+  }
   .btn-done-early:hover { border-color: var(--muted); color: var(--text); }
 
-  /* ─── EXPIRED SCREEN ─── */
+  /* ── EXPIRED ── */
   #expired {
-    padding: 40px 24px;
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    text-align: center;
+    padding: 40px 24px; max-width: 480px; margin: 0 auto;
+    width: 100%; align-items: center; justify-content: center; gap: 24px; text-align: center;
   }
-
   .expired-emoji { font-size: 56px; }
-
-  .expired-title {
-    font-size: 38px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-  }
-
-  .expired-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-  }
-
+  .expired-title { font-size: 38px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+  .expired-sub { font-family: 'DM Mono',monospace; font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  .stats-row { display: flex; gap: 16px; width: 100%; }
+  .stat-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+  .stat-val { font-size: 28px; font-weight: 800; color: var(--accent); font-family: 'DM Mono',monospace; }
+  .stat-lbl { font-family: 'DM Mono',monospace; font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }
   .btn-new-session {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 14px;
-    padding: 18px;
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 800;
-    cursor: pointer;
-    width: 100%;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    transition: all 0.2s;
+    background: var(--accent); color: var(--bg); border: none; border-radius: 14px;
+    padding: 18px; font-family: 'Syne',sans-serif; font-size: 15px; font-weight: 800;
+    cursor: pointer; width: 100%; letter-spacing: .05em; text-transform: uppercase; transition: all .2s;
   }
+  .btn-new-session:hover { box-shadow: 0 6px 24px rgba(200,241,53,.3); }
 
-  .btn-new-session:hover {
-    box-shadow: 0 6px 24px rgba(200, 241, 53, 0.3);
-  }
-
-  .stats-row {
-    display: flex;
-    gap: 16px;
-    width: 100%;
-  }
-
-  .stat-card {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    text-align: center;
-  }
-
-  .stat-val {
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-  }
-
-  .stat-lbl {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  /* Divider */
-  .divider {
-    width: 100%;
-    height: 1px;
-    background: var(--border);
-  }
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<!-- ═══ SETUP SCREEN ═══ -->
+<!-- ═══ SETUP ═══ -->
 <div class="screen active" id="setup">
-  <div class="logo">
-    <div class="logo-dot"></div>
-    FocusLock
-  </div>
+  <div style="padding:40px 24px;max-width:480px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:28px;">
+    <div class="logo"><div class="logo-dot"></div>FocusLock</div>
 
-  <div>
-    <h1>Lock in.<br><span>Earn it.</span></h1>
-    <p class="subtitle">// Instagram unlocks when work is done</p>
-  </div>
+    <div>
+      <h1>Lock in.<br><span>Earn it.</span></h1>
+      <p class="subtitle">// Instagram unlocks when work is done</p>
+    </div>
 
-  <div>
-    <div class="section-label">01 — Work Timer</div>
-    <div class="timer-grid">
-      <div class="timer-option" data-mins="30" onclick="selectTimer(this)">
-        <div class="time-val">30</div>
-        <div class="time-label">minutes</div>
+    <!-- Timer -->
+    <div>
+      <div class="section-label">01 — Work Timer</div>
+      <div class="timer-grid">
+        <div class="timer-option" data-mins="30" onclick="selectTimer(this)"><div class="time-val">30</div><div class="time-label">minutes</div></div>
+        <div class="timer-option" data-mins="60" onclick="selectTimer(this)"><div class="time-val">60</div><div class="time-label">minutes</div></div>
+        <div class="timer-option" data-mins="90" onclick="selectTimer(this)"><div class="time-val">90</div><div class="time-label">minutes</div></div>
+        <div class="timer-option" data-mins="120" onclick="selectTimer(this)"><div class="time-val">120</div><div class="time-label">minutes</div></div>
       </div>
-      <div class="timer-option" data-mins="60" onclick="selectTimer(this)">
-        <div class="time-val">60</div>
-        <div class="time-label">minutes</div>
-      </div>
-      <div class="timer-option" data-mins="90" onclick="selectTimer(this)">
-        <div class="time-val">90</div>
-        <div class="time-label">minutes</div>
-      </div>
-      <div class="timer-option" data-mins="120" onclick="selectTimer(this)">
-        <div class="time-val">120</div>
-        <div class="time-label">minutes</div>
+      <div class="custom-timer">
+        <span>Custom:</span>
+        <input type="number" id="customMins" placeholder="45" min="1" max="480" oninput="selectCustomTimer(this)">
+        <span>minutes</span>
       </div>
     </div>
-    <div class="custom-timer">
-      <span>Custom:</span>
-      <input type="number" id="customMins" placeholder="45" min="1" max="480" oninput="selectCustomTimer(this)">
-      <span>minutes</span>
-    </div>
-  </div>
 
-  <div>
-    <div class="section-label">02 — Today's Tasks</div>
-    <div class="task-input-row">
-      <input type="text" id="taskInput" placeholder="Add a task..." onkeydown="if(event.key==='Enter') addTask()">
-      <button class="btn-add" onclick="addTask()">+</button>
+    <!-- Tasks -->
+    <div>
+      <div class="section-label">02 — Today's Tasks</div>
+      <div class="task-input-row">
+        <input type="text" id="taskInput" placeholder="Add a task..." onkeydown="if(event.key==='Enter') addTask()">
+        <button class="btn-add" onclick="addTask()">+</button>
+      </div>
+      <div class="task-list" id="taskList"></div>
     </div>
-    <div class="task-list" id="taskList"></div>
-  </div>
 
-  <div>
-    <div class="section-label">03 — Instagram Reward Time</div>
-    <div class="reward-grid">
-      <div class="reward-option" data-mins="10" onclick="selectReward(this)">
-        <div class="r-val">10</div>
-        <div class="r-label">min</div>
-      </div>
-      <div class="reward-option" data-mins="20" onclick="selectReward(this)">
-        <div class="r-val">20</div>
-        <div class="r-label">min</div>
-      </div>
-      <div class="reward-option" data-mins="30" onclick="selectReward(this)">
-        <div class="r-val">30</div>
-        <div class="r-label">min</div>
+    <!-- Quotes -->
+    <div>
+      <div class="section-label">03 — Your Motivation Quotes <span style="color:var(--accent);font-size:10px;">(shown when Instagram is blocked)</span></div>
+      <div class="quotes-box">
+        <div class="quotes-header">
+          <span>MY QUOTES</span>
+          <span class="quotes-count" id="quotesCount">0 quotes</span>
+        </div>
+        <div class="quotes-list" id="quotesList">
+          <div style="padding:20px;text-align:center;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">No quotes yet. Add your first one ↓</div>
+        </div>
+        <div class="quote-input-area">
+          <textarea id="quoteText" placeholder="Type your motivational quote..." rows="2"></textarea>
+          <input type="text" id="quoteAuthor" placeholder="Author (optional)">
+          <button class="btn-add-quote" onclick="addQuote()">+ Add Quote</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <button class="btn-start" id="startBtn" onclick="startSession()" disabled>
-    Start Focus Session →
-  </button>
+    <!-- Reward -->
+    <div>
+      <div class="section-label">04 — Instagram Reward Time</div>
+      <div class="reward-grid">
+        <div class="reward-option" data-mins="10" onclick="selectReward(this)"><div class="r-val">10</div><div class="r-label">min</div></div>
+        <div class="reward-option" data-mins="20" onclick="selectReward(this)"><div class="r-val">20</div><div class="r-label">min</div></div>
+        <div class="reward-option" data-mins="30" onclick="selectReward(this)"><div class="r-val">30</div><div class="r-label">min</div></div>
+      </div>
+    </div>
+
+    <button class="btn-start" id="startBtn" onclick="startSession()" disabled>Start Focus Session →</button>
+  </div>
 </div>
 
-<!-- ═══ FOCUS SCREEN ═══ -->
+<!-- ═══ FOCUS ═══ -->
 <div class="screen" id="focus">
-  <div class="focus-header">
-    <div class="logo">
-      <div class="logo-dot"></div>
-      FocusLock
+  <div style="padding:40px 24px;max-width:480px;margin:0 auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:28px;min-height:100vh;">
+    <div class="focus-header">
+      <div class="logo"><div class="logo-dot"></div>FocusLock</div>
+      <div class="status-badge"><div class="status-dot"></div>LOCKED</div>
     </div>
-    <div class="status-badge">
-      <div class="status-dot"></div>
-      LOCKED
+
+    <div class="clock-wrap">
+      <div class="clock" id="focusClock">00:00</div>
+      <div class="clock-label">remaining</div>
     </div>
-  </div>
 
-  <div class="clock-wrap">
-    <div class="clock ticking" id="focusClock">00:00</div>
-    <div class="clock-label">remaining</div>
-  </div>
-
-  <div class="ring-wrap">
-    <svg viewBox="0 0 160 160">
-      <circle class="ring-bg" cx="80" cy="80" r="70"/>
-      <circle class="ring-progress" id="ringProgress" cx="80" cy="80" r="70"
-        stroke-dasharray="439.82"
-        stroke-dashoffset="0"/>
-    </svg>
-    <div class="ring-text">
-      <div class="ring-pct" id="ringPct">0%</div>
-      <div class="ring-sub">done</div>
+    <div class="ring-wrap">
+      <svg viewBox="0 0 160 160">
+        <circle class="ring-bg" cx="80" cy="80" r="70"/>
+        <circle class="ring-progress" id="ringProgress" cx="80" cy="80" r="70" stroke-dasharray="439.82" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-pct" id="ringPct">0%</div>
+        <div class="ring-sub">done</div>
+      </div>
     </div>
-  </div>
 
-  <div class="focus-tasks" id="focusTasks"></div>
-
-  <div class="divider"></div>
-
-  <div class="bottom-bar">
-    <button class="btn-secondary" onclick="resetSession()">Reset</button>
-    <button class="btn-unlock" id="unlockBtn" onclick="unlockReward()" disabled>
-      🔒 Unlock Instagram
-    </button>
+    <div class="focus-tasks" id="focusTasks"></div>
+    <div class="divider"></div>
+    <div class="bottom-bar">
+      <button class="btn-secondary" onclick="resetSession()">Reset</button>
+      <button class="btn-unlock" id="unlockBtn" onclick="unlockReward()" disabled>🔒 Unlock Instagram</button>
+    </div>
   </div>
 </div>
 
-<!-- ═══ REWARD SCREEN ═══ -->
+<!-- ═══ BLOCKED SCREEN ═══ -->
+<div class="screen" id="blocked">
+  <div class="blocked-inner">
+    <div class="blocked-lock">🔒</div>
+    <div class="blocked-tag">Instagram Blocked · Focus Mode Active</div>
+
+    <div>
+      <span class="blocked-quote-mark">"</span>
+      <div class="blocked-quote" id="blockedQuoteText">You're building something great. Stay focused.</div>
+    </div>
+    <div class="blocked-author" id="blockedQuoteAuthor">— FocusLock</div>
+
+    <div class="blocked-countdown">Closing in <span id="blockCountdown">5</span>s...</div>
+
+    <button class="btn-back-to-work" onclick="goBackToFocus()">← Back to work</button>
+  </div>
+</div>
+
+<!-- ═══ REWARD ═══ -->
 <div class="screen" id="reward">
   <div class="reward-emoji">🎉</div>
-  <div>
-    <div class="reward-title">You<br>earned it<span>.</span></div>
-  </div>
-
+  <div><div class="reward-title">You<br>earned it<span>.</span></div></div>
   <div>
     <div class="reward-clock" id="rewardClock">00:00</div>
     <div class="reward-sub">of Instagram time remaining</div>
   </div>
-
   <a href="https://instagram.com" target="_blank" class="instagram-btn">
-    <svg class="ig-icon" viewBox="0 0 24 24">
-      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-    </svg>
+    <svg class="ig-icon" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
     Open Instagram Now
   </a>
-
-  <div class="reward-warning">
-    ⚠ Instagram auto-locks when timer hits zero
-  </div>
-
+  <div class="reward-warning">⚠ Instagram auto-locks when timer hits zero</div>
   <button class="btn-done-early" onclick="endRewardEarly()">I'm done — lock it again</button>
 </div>
 
-<!-- ═══ EXPIRED SCREEN ═══ -->
+<!-- ═══ EXPIRED ═══ -->
 <div class="screen" id="expired">
   <div class="expired-emoji">🔒</div>
   <div>
-    <div class="expired-title">Time's<br>up.</div>
+    <div class="expired-title">Time's up.</div>
     <p class="expired-sub" style="margin-top:8px">// Instagram is locked again</p>
   </div>
-
   <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-val" id="statTasks">0</div>
-      <div class="stat-lbl">Tasks done</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val" id="statTime">0m</div>
-      <div class="stat-lbl">Focused</div>
-    </div>
+    <div class="stat-card"><div class="stat-val" id="statTasks">0</div><div class="stat-lbl">Tasks done</div></div>
+    <div class="stat-card"><div class="stat-val" id="statTime">0m</div><div class="stat-lbl">Focused</div></div>
   </div>
-
   <button class="btn-new-session" onclick="resetSession()">Start New Session →</button>
 </div>
 
 <script>
   // ── State ──
-  let workMinutes = 0;
-  let rewardMinutes = 0;
-  let tasks = [];
-  let taskChecked = [];
-  let focusInterval = null;
-  let rewardInterval = null;
-  let focusSecondsLeft = 0;
-  let rewardSecondsLeft = 0;
-  let focusTotalSeconds = 0;
-  let sessionStartTime = null;
+  let workMinutes = 0, rewardMinutes = 0;
+  let tasks = [], taskChecked = [];
+  let quotes = [
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
+    { text: "Do the work. Everyone wants to be successful, but nobody wants to do the work.", author: "Gary Vee" }
+  ];
+  let focusInterval = null, rewardInterval = null, blockCountdownInterval = null;
+  let focusSecondsLeft = 0, rewardSecondsLeft = 0, focusTotalSeconds = 0;
+  let isFocusActive = false;
 
-  // ── Setup helpers ──
+  // ── Init ──
+  renderQuotesList();
+  checkURLState();
+
+  function checkURLState() {
+    // When Shortcut opens this URL with ?blocked=1, show blocking screen
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('blocked') === '1' && isFocusActive) {
+      showBlockedScreen();
+    }
+  }
+
+  // ── Setup ──
   function selectTimer(el) {
     document.querySelectorAll('.timer-option').forEach(e => e.classList.remove('selected'));
     el.classList.add('selected');
@@ -910,176 +615,180 @@
     document.getElementById('customMins').value = '';
     checkStartReady();
   }
-
   function selectCustomTimer(el) {
     document.querySelectorAll('.timer-option').forEach(e => e.classList.remove('selected'));
     workMinutes = parseInt(el.value) || 0;
     checkStartReady();
   }
-
   function selectReward(el) {
     document.querySelectorAll('.reward-option').forEach(e => e.classList.remove('selected'));
     el.classList.add('selected');
     rewardMinutes = parseInt(el.dataset.mins);
     checkStartReady();
   }
-
   function checkStartReady() {
-    const ready = workMinutes > 0 && rewardMinutes > 0;
-    document.getElementById('startBtn').disabled = !ready;
+    document.getElementById('startBtn').disabled = !(workMinutes > 0 && rewardMinutes > 0);
   }
 
   function addTask() {
     const input = document.getElementById('taskInput');
     const val = input.value.trim();
     if (!val) return;
-    tasks.push(val);
-    taskChecked.push(false);
-    renderSetupTasks();
-    input.value = '';
-    checkStartReady();
+    tasks.push(val); taskChecked.push(false);
+    renderSetupTasks(); input.value = '';
   }
-
-  function removeTask(i) {
-    tasks.splice(i, 1);
-    taskChecked.splice(i, 1);
-    renderSetupTasks();
-  }
-
+  function removeTask(i) { tasks.splice(i,1); taskChecked.splice(i,1); renderSetupTasks(); }
   function renderSetupTasks() {
-    const list = document.getElementById('taskList');
-    list.innerHTML = tasks.map((t, i) => `
+    document.getElementById('taskList').innerHTML = tasks.map((t,i) => `
       <div class="task-item">
         <span class="task-num">${String(i+1).padStart(2,'0')}</span>
         <span class="task-text">${t}</span>
         <button class="btn-remove" onclick="removeTask(${i})">✕</button>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  // ── Session start ──
-  function startSession() {
-    if (tasks.length === 0) {
-      tasks = ['Complete my work'];
-      taskChecked = [false];
+  // ── Quotes ──
+  function addQuote() {
+    const text = document.getElementById('quoteText').value.trim();
+    const author = document.getElementById('quoteAuthor').value.trim();
+    if (!text) return;
+    quotes.push({ text, author: author || 'Unknown' });
+    document.getElementById('quoteText').value = '';
+    document.getElementById('quoteAuthor').value = '';
+    renderQuotesList();
+  }
+  function removeQuote(i) { quotes.splice(i,1); renderQuotesList(); }
+  function renderQuotesList() {
+    const list = document.getElementById('quotesList');
+    document.getElementById('quotesCount').textContent = quotes.length + ' quote' + (quotes.length !== 1 ? 's' : '');
+    if (quotes.length === 0) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);">No quotes yet. Add your first one ↓</div>';
+      return;
     }
-    taskChecked = tasks.map(() => false);
+    list.innerHTML = quotes.map((q,i) => `
+      <div class="quote-item">
+        <div style="flex:1">
+          <div class="quote-item-text">"${q.text}"</div>
+          <div class="quote-item-author">— ${q.author}</div>
+        </div>
+        <button class="btn-remove" onclick="removeQuote(${i})">✕</button>
+      </div>`).join('');
+  }
+
+  function getRandomQuote() {
+    if (quotes.length === 0) return { text: "Stay focused. You're doing great.", author: "FocusLock" };
+    return quotes[Math.floor(Math.random() * quotes.length)];
+  }
+
+  // ── Session ──
+  function startSession() {
+    if (tasks.length === 0) { tasks = ['Complete my work']; taskChecked = [false]; }
+    else taskChecked = tasks.map(() => false);
     focusSecondsLeft = workMinutes * 60;
     focusTotalSeconds = focusSecondsLeft;
-    sessionStartTime = Date.now();
-
+    isFocusActive = true;
     showScreen('focus');
-    renderFocusTasks();
-    updateFocusClock();
-    updateUnlockBtn();
-
+    renderFocusTasks(); updateFocusClock(); updateUnlockBtn();
     focusInterval = setInterval(() => {
       focusSecondsLeft--;
       updateFocusClock();
-      if (focusSecondsLeft <= 0) {
-        clearInterval(focusInterval);
-        focusSecondsLeft = 0;
-        updateFocusClock();
-        updateUnlockBtn();
-      }
+      if (focusSecondsLeft <= 0) { clearInterval(focusInterval); focusSecondsLeft = 0; updateFocusClock(); updateUnlockBtn(); }
     }, 1000);
   }
 
   function updateFocusClock() {
-    const m = Math.floor(focusSecondsLeft / 60);
-    const s = focusSecondsLeft % 60;
-    document.getElementById('focusClock').textContent =
-      String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-
-    // Ring
-    const pct = 1 - (focusSecondsLeft / focusTotalSeconds);
-    const circumference = 439.82;
-    document.getElementById('ringProgress').style.strokeDashoffset =
-      circumference * (1 - pct);
-    document.getElementById('ringPct').textContent = Math.round(pct * 100) + '%';
+    const m = Math.floor(focusSecondsLeft/60), s = focusSecondsLeft%60;
+    document.getElementById('focusClock').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    const pct = 1 - (focusSecondsLeft/focusTotalSeconds);
+    document.getElementById('ringProgress').style.strokeDashoffset = 439.82*(1-pct);
+    document.getElementById('ringPct').textContent = Math.round(pct*100)+'%';
   }
 
   function renderFocusTasks() {
-    const container = document.getElementById('focusTasks');
-    container.innerHTML = tasks.map((t, i) => `
-      <div class="focus-task ${taskChecked[i] ? 'done' : ''}" onclick="toggleTask(${i})">
-        <div class="check-box">${taskChecked[i] ? '✓' : ''}</div>
+    document.getElementById('focusTasks').innerHTML = tasks.map((t,i) => `
+      <div class="focus-task ${taskChecked[i]?'done':''}" onclick="toggleTask(${i})">
+        <div class="check-box">${taskChecked[i]?'✓':''}</div>
         <div class="focus-task-text">${t}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  function toggleTask(i) {
-    taskChecked[i] = !taskChecked[i];
-    renderFocusTasks();
-    updateUnlockBtn();
-  }
+  function toggleTask(i) { taskChecked[i]=!taskChecked[i]; renderFocusTasks(); updateUnlockBtn(); }
 
   function updateUnlockBtn() {
     const allDone = tasks.length > 0 && taskChecked.every(Boolean);
-    const timerDone = focusSecondsLeft <= 0;
-    const canUnlock = allDone || timerDone;
+    const canUnlock = allDone || focusSecondsLeft <= 0;
     const btn = document.getElementById('unlockBtn');
     btn.disabled = !canUnlock;
     btn.textContent = canUnlock ? '🎉 Unlock Instagram!' : '🔒 Unlock Instagram';
   }
 
-  // ── Reward ──
-  function unlockReward() {
-    clearInterval(focusInterval);
-    rewardSecondsLeft = rewardMinutes * 60;
-    showScreen('reward');
-    updateRewardClock();
-
-    rewardInterval = setInterval(() => {
-      rewardSecondsLeft--;
-      updateRewardClock();
-      if (rewardSecondsLeft <= 0) {
-        clearInterval(rewardInterval);
-        showExpired();
+  // ── BLOCKED SCREEN ──
+  function showBlockedScreen() {
+    clearInterval(blockCountdownInterval);
+    const q = getRandomQuote();
+    document.getElementById('blockedQuoteText').textContent = q.text;
+    document.getElementById('blockedQuoteAuthor').textContent = '— ' + q.author;
+    let countdown = 5;
+    document.getElementById('blockCountdown').textContent = countdown;
+    showScreen('blocked');
+    blockCountdownInterval = setInterval(() => {
+      countdown--;
+      document.getElementById('blockCountdown').textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(blockCountdownInterval);
+        goBackToFocus();
       }
     }, 1000);
   }
 
-  function updateRewardClock() {
-    const m = Math.floor(rewardSecondsLeft / 60);
-    const s = rewardSecondsLeft % 60;
-    document.getElementById('rewardClock').textContent =
-      String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  function goBackToFocus() {
+    clearInterval(blockCountdownInterval);
+    showScreen('focus');
   }
 
-  function endRewardEarly() {
-    clearInterval(rewardInterval);
-    showExpired();
+  // ── Reward ──
+  function unlockReward() {
+    clearInterval(focusInterval);
+    isFocusActive = false;
+    rewardSecondsLeft = rewardMinutes * 60;
+    showScreen('reward');
+    updateRewardClock();
+    rewardInterval = setInterval(() => {
+      rewardSecondsLeft--;
+      updateRewardClock();
+      if (rewardSecondsLeft <= 0) { clearInterval(rewardInterval); showExpired(); }
+    }, 1000);
   }
+
+  function updateRewardClock() {
+    const m = Math.floor(rewardSecondsLeft/60), s = rewardSecondsLeft%60;
+    document.getElementById('rewardClock').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+
+  function endRewardEarly() { clearInterval(rewardInterval); showExpired(); }
 
   function showExpired() {
     const doneTasks = taskChecked.filter(Boolean).length;
-    const focusedMins = Math.round((focusTotalSeconds - focusSecondsLeft) / 60);
-    document.getElementById('statTasks').textContent = doneTasks + '/' + tasks.length;
-    document.getElementById('statTime').textContent = focusedMins + 'm';
+    const focusedMins = Math.round((focusTotalSeconds - focusSecondsLeft)/60);
+    document.getElementById('statTasks').textContent = doneTasks+'/'+tasks.length;
+    document.getElementById('statTime').textContent = focusedMins+'m';
     showScreen('expired');
   }
 
   // ── Reset ──
   function resetSession() {
-    clearInterval(focusInterval);
-    clearInterval(rewardInterval);
-    tasks = [];
-    taskChecked = [];
-    workMinutes = 0;
-    rewardMinutes = 0;
-    focusSecondsLeft = 0;
-    focusTotalSeconds = 0;
-    document.querySelectorAll('.timer-option, .reward-option').forEach(e => e.classList.remove('selected'));
-    document.getElementById('taskList').innerHTML = '';
-    document.getElementById('customMins').value = '';
-    document.getElementById('startBtn').disabled = true;
+    clearInterval(focusInterval); clearInterval(rewardInterval); clearInterval(blockCountdownInterval);
+    tasks=[]; taskChecked=[]; workMinutes=0; rewardMinutes=0;
+    focusSecondsLeft=0; focusTotalSeconds=0; isFocusActive=false;
+    document.querySelectorAll('.timer-option,.reward-option').forEach(e=>e.classList.remove('selected'));
+    document.getElementById('taskList').innerHTML='';
+    document.getElementById('customMins').value='';
+    document.getElementById('startBtn').disabled=true;
     showScreen('setup');
   }
 
   function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
   }
 </script>
