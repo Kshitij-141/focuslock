@@ -604,6 +604,7 @@
       focusTotalSeconds,
       workMinutes,
       rewardMinutes,
+      rewardSecondsLeft,
       tasks,
       taskChecked,
       quotes
@@ -622,6 +623,7 @@
       rewardMinutes   = s.rewardMinutes;
       tasks       = s.tasks;
       taskChecked     = s.taskChecked;
+      if (s.rewardSecondsLeft) rewardSecondsLeft = s.rewardSecondsLeft;
       if (s.quotes && s.quotes.length) quotes = s.quotes;
       return true;
     } catch(e) { return false; }
@@ -651,12 +653,23 @@
 
     if (isBlocked) {
       if (mode === 'focus' && hasState && isFocusActive) {
+        // Mid-session: show blocking screen with quote
         resumeFocusTimer();
         showBlockedScreen();
       } else if (mode === 'reward') {
-        // Reward active — go straight to Instagram
-        window.location.replace('https://instagram.com');
+        // Reward mode: Shortcut fired but user is allowed — just show reward screen
+        // NEVER redirect back to Instagram here — that causes an infinite loop!
+        showScreen('reward');
+        updateRewardClock();
+        if (rewardSecondsLeft > 0) {
+          rewardInterval = setInterval(() => {
+            rewardSecondsLeft--;
+            updateRewardClock();
+            if (rewardSecondsLeft <= 0) { clearInterval(rewardInterval); showExpired(); }
+          }, 1000);
+        }
       } else {
+        // No active session
         showScreen('setup');
       }
     } else if (mode === 'focus' && hasState && isFocusActive) {
@@ -668,6 +681,14 @@
       showScreen('focus');
     } else if (mode === 'reward') {
       showScreen('reward');
+      updateRewardClock();
+      if (rewardSecondsLeft > 0) {
+        rewardInterval = setInterval(() => {
+          rewardSecondsLeft--;
+          updateRewardClock();
+          if (rewardSecondsLeft <= 0) { clearInterval(rewardInterval); showExpired(); }
+        }, 1000);
+      }
     }
     // else: fresh start → setup screen (default)
   }
@@ -834,12 +855,13 @@
   function unlockReward() {
     clearInterval(focusInterval);
     isFocusActive = false;
-    saveState('reward');
     rewardSecondsLeft = rewardMinutes * 60;
+    saveState('reward');
     showScreen('reward');
     updateRewardClock();
     rewardInterval = setInterval(() => {
       rewardSecondsLeft--;
+      saveState('reward');
       updateRewardClock();
       if (rewardSecondsLeft <= 0) { clearInterval(rewardInterval); showExpired(); }
     }, 1000);
