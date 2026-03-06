@@ -635,7 +635,19 @@
 
   // ── Init ──
   renderQuotesList();
-  checkURLState();
+
+  // Handle ?api=mode — return plain text mode for Shortcut to read
+  const initParams = new URLSearchParams(window.location.search);
+  if (initParams.get('api') === 'mode') {
+    const raw = localStorage.getItem('fl_state');
+    const mode = raw ? JSON.parse(raw).mode : 'idle';
+    // Replace entire page with just the mode text so Shortcut can read it
+    document.open();
+    document.write(mode);
+    document.close();
+  } else {
+    checkURLState();
+  }
 
   function checkURLState() {
     const params = new URLSearchParams(window.location.search);
