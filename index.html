@@ -641,32 +641,35 @@
     const hasState = loadState();
     renderQuotesList();
 
+    // Clean the URL immediately so Safari doesn't cache ?blocked=1
     if (isBlocked) {
-      // Shortcut fired — check what mode we're in
-      const raw = sessionStorage.getItem('fl_state');
-      const mode = raw ? JSON.parse(raw).mode : 'idle';
+      window.history.replaceState({}, '', window.location.pathname);
+    }
 
+    const raw = sessionStorage.getItem('fl_state');
+    const mode = raw ? JSON.parse(raw).mode : 'idle';
+
+    if (isBlocked) {
       if (mode === 'focus' && hasState && isFocusActive) {
-        // Mid-session: block Instagram, show quote screen
         resumeFocusTimer();
         showBlockedScreen();
       } else if (mode === 'reward') {
-        // Reward time is active: let Instagram open freely
-        // Just close this page immediately so Instagram stays open
+        // Reward active — go straight to Instagram
         window.location.replace('https://instagram.com');
       } else {
-        // No active session — show setup
         showScreen('setup');
       }
-    } else if (hasState && isFocusActive) {
-      // User opened app normally during focus
+    } else if (mode === 'focus' && hasState && isFocusActive) {
+      // Returned to app normally during focus
       resumeFocusTimer();
       renderFocusTasks();
       updateFocusClock();
       updateUnlockBtn();
       showScreen('focus');
+    } else if (mode === 'reward') {
+      showScreen('reward');
     }
-    // else: fresh start, show setup
+    // else: fresh start → setup screen (default)
   }
 
   function resumeFocusTimer() {
